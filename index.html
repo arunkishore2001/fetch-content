@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Class / ID HTML Fetch Tool</title>
+<title>HTML Fetch Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Prism.js (HTML syntax highlighting) -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
 
 <style>
 body {
@@ -71,10 +74,10 @@ input {
 }
 
 .result-block {
-  background: #f7f8fc;
+  background: #1e1e1e;
   padding: 15px;
   border-radius: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 .result-header {
@@ -86,11 +89,11 @@ input {
 
 .result-header span {
   font-weight: bold;
-  color: #667eea;
+  color: #9cdcfe;
 }
 
 .copy-btn {
-  background: #667eea;
+  background: #0d6efd;
   color: #fff;
   border: none;
   padding: 6px 14px;
@@ -104,13 +107,11 @@ input {
 }
 
 pre {
-  background: #fff;
-  padding: 12px;
-  border-radius: 6px;
+  margin: 0;
+  border-radius: 8px;
   font-size: 13px;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
+  max-height: 500px;
+  overflow: auto;
 }
 </style>
 </head>
@@ -118,7 +119,7 @@ pre {
 <body>
 
 <div class="container">
-  <h2>Fetch Full HTML by Class or ID</h2>
+  <h2>Fetch HTML by Class or ID</h2>
 
   <input id="url" placeholder="Enter webpage URL (https://example.com)">
 
@@ -129,10 +130,14 @@ pre {
     </div>
   </div>
 
-  <button class="fetch-btn" onclick="fetchContent()">Fetch Code</button>
+  <button class="fetch-btn" onclick="fetchContent()">Fetch HTML</button>
 
   <div class="results" id="results"></div>
 </div>
+
+<!-- Prism.js -->
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
 
 <script>
 function addSelector() {
@@ -152,7 +157,7 @@ async function fetchContent() {
     .filter(Boolean);
 
   if (!url || selectors.length === 0) {
-    alert('Please enter URL and at least one class or ID');
+    alert('Please enter URL and at least one selector');
     return;
   }
 
@@ -166,6 +171,14 @@ async function fetchContent() {
   renderResults(data);
 }
 
+function escapeHTML(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function renderResults(data) {
   const results = document.getElementById('results');
   results.innerHTML = '';
@@ -174,20 +187,24 @@ function renderResults(data) {
     const block = document.createElement('div');
     block.className = 'result-block';
 
+    const escaped = escapeHTML(item.content || 'Not Found');
+
     block.innerHTML = `
       <div class="result-header">
         <span>${item.selector}</span>
         <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       </div>
-      <pre>${item.content || 'Not Found'}</pre>
+      <pre><code class="language-html">${escaped}</code></pre>
     `;
 
     results.appendChild(block);
   });
+
+  Prism.highlightAll(); // 🔥 Syntax highlight
 }
 
 function copyCode(btn) {
-  const code = btn.closest('.result-block').querySelector('pre').innerText;
+  const code = btn.closest('.result-block').querySelector('code').innerText;
   navigator.clipboard.writeText(code);
 
   btn.textContent = 'Copied';
