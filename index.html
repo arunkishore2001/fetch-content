@@ -139,17 +139,34 @@ async function fetchContent() {
   renderResults(data);
 }
 
-/* Beautify HTML */
 function formatHTML(html) {
   const tab = '  ';
   let formatted = '';
   let indent = 0;
 
-  html.replace(/>(<)/g, '>\n<').split('\n').forEach(line => {
-    if (line.match(/^<\/\w/)) indent--;
-    formatted += tab.repeat(indent) + line + '\n';
-    if (line.match(/^<\w[^>]*[^\/]>$/)) indent++;
-  });
+  html
+    .replace(/></g, '>\n<')
+    .split('\n')
+    .forEach(line => {
+      line = line.trim();
+
+      // Closing tag
+      if (line.startsWith('</')) {
+        indent = Math.max(indent - 1, 0);
+      }
+
+      formatted += tab.repeat(indent) + line + '\n';
+
+      // Opening tag (but not self-closing)
+      if (
+        line.startsWith('<') &&
+        !line.startsWith('</') &&
+        !line.endsWith('/>') &&
+        !line.includes('</')
+      ) {
+        indent++;
+      }
+    });
 
   return formatted.trim();
 }
