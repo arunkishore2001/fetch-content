@@ -15,11 +15,14 @@ export default async function handler(req, res) {
     const dom = new JSDOM(html);
     const document = dom.window.document;
 
-    const result = selectors.map(sel => {
-      const el = document.querySelector(sel);
+    const result = selectors.map(selector => {
+      const elements = document.querySelectorAll(selector);
+
       return {
-        selector: sel,
-        content: el ? el.outerHTML : null
+        selector,
+        content: elements.length
+          ? Array.from(elements).map(el => el.outerHTML).join('\n\n')
+          : null
       };
     });
 
