@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>HTML Fetch Tool</title>
+<title>Class / ID HTML Fetch Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -10,7 +10,6 @@ body {
   font-family: system-ui, sans-serif;
   background: linear-gradient(135deg, #667eea, #764ba2);
   padding: 30px;
-  color: #333;
 }
 
 .container {
@@ -19,7 +18,7 @@ body {
   background: #fff;
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
 }
 
 h2 {
@@ -29,6 +28,7 @@ h2 {
 input {
   width: 100%;
   padding: 12px;
+  margin-top: 8px;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 15px;
@@ -46,18 +46,18 @@ input {
 
 .add-btn {
   padding: 12px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
   background: #667eea;
   color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
   font-size: 18px;
 }
 
 .fetch-btn {
   margin-top: 15px;
-  padding: 14px;
   width: 100%;
+  padding: 14px;
   background: #764ba2;
   color: #fff;
   border: none;
@@ -71,11 +71,10 @@ input {
 }
 
 .result-block {
-  background: #f8f9fc;
-  border-radius: 10px;
+  background: #f7f8fc;
   padding: 15px;
+  border-radius: 10px;
   margin-bottom: 20px;
-  position: relative;
 }
 
 .result-header {
@@ -94,7 +93,7 @@ input {
   background: #667eea;
   color: #fff;
   border: none;
-  padding: 6px 12px;
+  padding: 6px 14px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
@@ -108,8 +107,10 @@ pre {
   background: #fff;
   padding: 12px;
   border-radius: 6px;
-  overflow-x: auto;
   font-size: 13px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
 </head>
@@ -117,9 +118,9 @@ pre {
 <body>
 
 <div class="container">
-  <h2>Fetch HTML by Class or ID</h2>
+  <h2>Fetch Full HTML by Class or ID</h2>
 
-  <input id="url" placeholder="Enter page URL (https://example.com)">
+  <input id="url" placeholder="Enter webpage URL (https://example.com)">
 
   <div id="selectors">
     <div class="selector-row">
@@ -128,7 +129,7 @@ pre {
     </div>
   </div>
 
-  <button class="fetch-btn" onclick="fetchContent()">Fetch Content</button>
+  <button class="fetch-btn" onclick="fetchContent()">Fetch Code</button>
 
   <div class="results" id="results"></div>
 </div>
@@ -151,7 +152,7 @@ async function fetchContent() {
     .filter(Boolean);
 
   if (!url || selectors.length === 0) {
-    alert('Enter URL and at least one selector');
+    alert('Please enter URL and at least one class or ID');
     return;
   }
 
@@ -176,7 +177,7 @@ function renderResults(data) {
     block.innerHTML = `
       <div class="result-header">
         <span>${item.selector}</span>
-        <button class="copy-btn" onclick="copyHTML(this)">Copy</button>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
       </div>
       <pre>${item.content || 'Not Found'}</pre>
     `;
@@ -185,9 +186,9 @@ function renderResults(data) {
   });
 }
 
-function copyHTML(btn) {
-  const text = btn.closest('.result-block').querySelector('pre').innerText;
-  navigator.clipboard.writeText(text);
+function copyCode(btn) {
+  const code = btn.closest('.result-block').querySelector('pre').innerText;
+  navigator.clipboard.writeText(code);
 
   btn.textContent = 'Copied';
   btn.classList.add('copied');
