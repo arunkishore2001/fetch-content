@@ -22,14 +22,14 @@ export default async function handler(req, res) {
         selector,
         content: elements.length
           ? Array.from(elements)
-              .map(el => el.outerHTML)   // ✅ THIS LINE IS IMPORTANT
+              .map(el => el.innerHTML) // ✅ ONLY INNER CONTENT
               .join('\n\n')
           : null
       };
     });
 
     res.status(200).json(result);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch HTML' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch page' });
   }
 }
