@@ -21,13 +21,15 @@ export default async function handler(req, res) {
       return {
         selector,
         content: elements.length
-          ? Array.from(elements).map(el => el.outerHTML).join('\n\n')
+          ? Array.from(elements)
+              .map(el => el.outerHTML)   // ✅ THIS LINE IS IMPORTANT
+              .join('\n\n')
           : null
       };
     });
 
     res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch page' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch HTML' });
   }
 }
