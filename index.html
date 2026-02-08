@@ -5,7 +5,7 @@
 <title>HTML Fetch Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Prism.js (HTML syntax highlighting) -->
+<!-- Prism.js -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
 
 <style>
@@ -21,20 +21,6 @@ body {
   background: #fff;
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-}
-
-h2 {
-  margin-bottom: 15px;
-}
-
-input {
-  width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 15px;
 }
 
 .selector-row {
@@ -43,8 +29,11 @@ input {
   margin-top: 10px;
 }
 
-.selector-row input {
+input {
   flex: 1;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
 
 .add-btn {
@@ -54,7 +43,6 @@ input {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 18px;
 }
 
 .fetch-btn {
@@ -65,31 +53,25 @@ input {
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
   cursor: pointer;
-}
-
-.results {
-  margin-top: 30px;
 }
 
 .result-block {
   background: #1e1e1e;
+  margin-top: 25px;
   padding: 15px;
   border-radius: 10px;
-  margin-bottom: 25px;
 }
 
 .result-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   margin-bottom: 10px;
 }
 
 .result-header span {
-  font-weight: bold;
   color: #9cdcfe;
+  font-weight: bold;
 }
 
 .copy-btn {
@@ -99,19 +81,13 @@ input {
   padding: 6px 14px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 13px;
-}
-
-.copy-btn.copied {
-  background: #28a745;
 }
 
 pre {
   margin: 0;
-  border-radius: 8px;
-  font-size: 13px;
   max-height: 500px;
   overflow: auto;
+  border-radius: 8px;
 }
 </style>
 </head>
@@ -119,9 +95,7 @@ pre {
 <body>
 
 <div class="container">
-  <h2>Fetch HTML by Class or ID</h2>
-
-  <input id="url" placeholder="Enter webpage URL (https://example.com)">
+  <input id="url" placeholder="Enter webpage URL">
 
   <div id="selectors">
     <div class="selector-row">
@@ -132,10 +106,9 @@ pre {
 
   <button class="fetch-btn" onclick="fetchContent()">Fetch HTML</button>
 
-  <div class="results" id="results"></div>
+  <div id="results"></div>
 </div>
 
-<!-- Prism.js -->
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
 
@@ -156,11 +129,6 @@ async function fetchContent() {
     .map(i => i.value.trim())
     .filter(Boolean);
 
-  if (!url || selectors.length === 0) {
-    alert('Please enter URL and at least one selector');
-    return;
-  }
-
   const res = await fetch('/api/fetch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -171,12 +139,25 @@ async function fetchContent() {
   renderResults(data);
 }
 
+/* Beautify HTML */
+function formatHTML(html) {
+  const tab = '  ';
+  let formatted = '';
+  let indent = 0;
+
+  html.replace(/>(<)/g, '>\n<').split('\n').forEach(line => {
+    if (line.match(/^<\/\w/)) indent--;
+    formatted += tab.repeat(indent) + line + '\n';
+    if (line.match(/^<\w[^>]*[^\/]>$/)) indent++;
+  });
+
+  return formatted.trim();
+}
+
 function escapeHTML(str) {
-  if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return str.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
 }
 
 function renderResults(data) {
@@ -187,7 +168,8 @@ function renderResults(data) {
     const block = document.createElement('div');
     block.className = 'result-block';
 
-    const escaped = escapeHTML(item.content || 'Not Found');
+    const prettyHTML = formatHTML(item.content || 'Not Found');
+    const escaped = escapeHTML(prettyHTML);
 
     block.innerHTML = `
       <div class="result-header">
@@ -200,20 +182,12 @@ function renderResults(data) {
     results.appendChild(block);
   });
 
-  Prism.highlightAll(); // 🔥 Syntax highlight
+  Prism.highlightAll();
 }
 
 function copyCode(btn) {
   const code = btn.closest('.result-block').querySelector('code').innerText;
   navigator.clipboard.writeText(code);
-
-  btn.textContent = 'Copied';
-  btn.classList.add('copied');
-
-  setTimeout(() => {
-    btn.textContent = 'Copy';
-    btn.classList.remove('copied');
-  }, 1500);
 }
 </script>
 
