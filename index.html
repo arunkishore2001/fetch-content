@@ -5,7 +5,7 @@
 <title>HTML Fetch Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Prism.js -->
+<!-- Prism -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
 
 <style>
@@ -16,28 +16,24 @@ body {
 }
 
 .container {
-  max-width: 900px;
+  max-width: 950px;
   margin: auto;
   background: #fff;
   padding: 25px;
   border-radius: 12px;
 }
-  #url{
 
-    width:91%;
-  }
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
 
 .selector-row {
   display: flex;
   gap: 10px;
   margin-top: 10px;
-}
-
-input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
 }
 
 .add-btn {
@@ -60,11 +56,23 @@ input {
   cursor: pointer;
 }
 
+.loading-bar {
+  height: 4px;
+  width: 0;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  margin-top: 10px;
+  transition: width 0.4s ease;
+}
+
+.section {
+  margin-top: 30px;
+}
+
 .result-block {
   background: #1e1e1e;
-  margin-top: 25px;
   padding: 15px;
   border-radius: 10px;
+  margin-top: 20px;
 }
 
 .result-header {
@@ -87,9 +95,13 @@ input {
   cursor: pointer;
 }
 
+.copy-btn.copied {
+  background: #28a745;
+}
+
 pre {
   margin: 0;
-  max-height: 500px;
+  max-height: 450px;
   overflow: auto;
   border-radius: 8px;
 }
@@ -99,6 +111,7 @@ pre {
 <body>
 
 <div class="container">
+
   <input id="url" placeholder="Enter webpage URL">
 
   <div id="selectors">
@@ -109,12 +122,16 @@ pre {
   </div>
 
   <button class="fetch-btn" onclick="fetchContent()">Fetch HTML</button>
+  <div class="loading-bar" id="loadingBar"></div>
 
   <div id="results"></div>
 </div>
 
+<!-- Prism -->
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
 
 <script>
 function addSelector() {
@@ -127,11 +144,25 @@ function addSelector() {
   document.getElementById('selectors').appendChild(row);
 }
 
+function startLoading() {
+  document.getElementById('loadingBar').style.width = '100%';
+}
+
+function stopLoading() {
+  setTimeout(() => {
+    document.getElementById('loadingBar').style.width = '0';
+  }, 400);
+}
+
 async function fetchContent() {
   const url = document.getElementById('url').value.trim();
   const selectors = [...document.querySelectorAll('#selectors input')]
     .map(i => i.value.trim())
     .filter(Boolean);
+
+  if (!url) return;
+
+  startLoading();
 
   const res = await fetch('/api/fetch', {
     method: 'POST',
@@ -140,7 +171,9 @@ async function fetchContent() {
   });
 
   const data = await res.json();
-  renderResults(data);
+  stopLoading();
+
+  renderAll(data);
 }
 
 function formatHTML(html) {
@@ -148,29 +181,17 @@ function formatHTML(html) {
   let formatted = '';
   let indent = 0;
 
-  html
-    .replace(/></g, '>\n<')
-    .split('\n')
-    .forEach(line => {
-      line = line.trim();
-
-      // Closing tag
-      if (line.startsWith('</')) {
-        indent = Math.max(indent - 1, 0);
-      }
-
-      formatted += tab.repeat(indent) + line + '\n';
-
-      // Opening tag (but not self-closing)
-      if (
-        line.startsWith('<') &&
-        !line.startsWith('</') &&
-        !line.endsWith('/>') &&
-        !line.includes('</')
-      ) {
-        indent++;
-      }
-    });
+  html.replace(/></g, '>\n<').split('\n').forEach(line => {
+    line = line.trim();
+    if (line.startsWith('</')) indent = Math.max(indent - 1, 0);
+    formatted += tab.repeat(indent) + line + '\n';
+    if (
+      line.startsWith('<') &&
+      !line.startsWith('</') &&
+      !line.endsWith('/>') &&
+      !line.includes('</')
+    ) indent++;
+  });
 
   return formatted.trim();
 }
@@ -181,26 +202,41 @@ function escapeHTML(str) {
             .replace(/>/g, '&gt;');
 }
 
-function renderResults(data) {
+function renderBlock(title, code, lang) {
+  if (!code) return '';
+
+  const formatted = lang === 'html' ? formatHTML(code) : code;
+  const escaped = escapeHTML(formatted);
+
+  return `
+    <div class="result-block">
+      <div class="result-header">
+        <span>${title}</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><code class="language-${lang}">${escaped}</code></pre>
+    </div>
+  `;
+}
+
+function renderAll(data) {
   const results = document.getElementById('results');
   results.innerHTML = '';
 
-  data.forEach(item => {
-    const block = document.createElement('div');
-    block.className = 'result-block';
+  if (data.title) {
+    results.innerHTML += renderBlock('Title', data.title, 'html');
+  }
 
-    const prettyHTML = formatHTML(item.content || 'Not Found');
-    const escaped = escapeHTML(prettyHTML);
+  if (data.inlineStyles) {
+    results.innerHTML += renderBlock('Inline CSS', data.inlineStyles, 'css');
+  }
 
-    block.innerHTML = `
-      <div class="result-header">
-        <span>${item.selector}</span>
-        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
-      </div>
-      <pre><code class="language-html">${escaped}</code></pre>
-    `;
+  if (data.inlineScripts) {
+    results.innerHTML += renderBlock('Inline JS', data.inlineScripts, 'javascript');
+  }
 
-    results.appendChild(block);
+  data.results.forEach(item => {
+    results.innerHTML += renderBlock(item.selector, item.content, 'html');
   });
 
   Prism.highlightAll();
@@ -209,6 +245,14 @@ function renderResults(data) {
 function copyCode(btn) {
   const code = btn.closest('.result-block').querySelector('code').innerText;
   navigator.clipboard.writeText(code);
+
+  btn.textContent = 'Copied';
+  btn.classList.add('copied');
+
+  setTimeout(() => {
+    btn.textContent = 'Copy';
+    btn.classList.remove('copied');
+  }, 1500);
 }
 </script>
 
