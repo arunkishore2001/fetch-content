@@ -1,283 +1,299 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <title>HTML Fetch Tool</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>HTML Fetch Tool</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Prism -->
-  <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+<!-- Prism -->
+<link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
 
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      padding: 30px;
-    }
+<style>
+body {
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding: 30px;
+}
 
-    .container {
-      max-width: 950px;
-      margin: auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 12px;
-    }
+.container {
+  max-width: 950px;
+  margin: auto;
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+}
 
-    input {
-      width: 100%;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
+input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
 
-    .selector-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
+.selector-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
 
-    .add-btn {
-      padding: 12px 16px;
-      background: #667eea;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+.add-btn {
+  padding: 12px 16px;
+  background: #667eea;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-    .fetch-btn {
-      margin-top: 15px;
-      width: 100%;
-      padding: 14px;
-      background: #764ba2;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+.fetch-btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 14px;
+  background: #764ba2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
 
-    .loading-bar {
-      height: 4px;
-      width: 0;
-      background: linear-gradient(90deg, #667eea, #764ba2);
-      margin-top: 10px;
-      transition: width 0.4s ease;
-    }
+.loading-bar {
+  height: 4px;
+  width: 0;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  margin-top: 10px;
+  transition: width 0.4s ease;
+}
 
-    .section {
-      margin-top: 30px;
-    }
+.section {
+  margin-top: 30px;
+}
 
-    .result-block {
-      background: #1e1e1e;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
+.result-block {
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
 
-    .result-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  align-items: center;
+}
 
-    .result-header span {
-      color: #9cdcfe;
-      font-weight: bold;
-    }
+.result-header span {
+  color: #9cdcfe;
+  font-weight: bold;
+}
 
-    .copy-btn {
-      background: #0d6efd;
-      color: #fff;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+.copy-btn {
+  background: #0d6efd;
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-    .copy-btn.copied {
-      background: #28a745;
-    }
+.fix-btn {
+  background: #ff9800;
+}
 
-    pre {
-      margin: 0;
-      max-height: 450px;
-      overflow: auto;
-      border-radius: 8px;
-    }
-  </style>
+.copy-btn.copied {
+  background: #28a745;
+}
+
+pre {
+  margin: 0;
+  max-height: 450px;
+  overflow: auto;
+  border-radius: 8px;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+</style>
 </head>
 
 <body>
 
-  <div class="container">
+<div class="container">
 
-    <input id="url" placeholder="Enter webpage URL">
+  <input id="url" placeholder="Enter image URL here">
 
-    <div id="selectors">
-      <div class="selector-row">
-        <input placeholder=".class or #id">
-        <button class="add-btn" onclick="addSelector()">+</button>
-      </div>
+  <div id="selectors">
+    <div class="selector-row">
+      <input placeholder=".class or #id">
+      <button class="add-btn" onclick="addSelector()">+</button>
     </div>
-
-    <button class="fetch-btn" onclick="fetchContent()">Fetch HTML</button>
-    <div class="loading-bar" id="loadingBar"></div>
-
-    <div id="results"></div>
   </div>
 
-  <!-- Prism -->
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+  <button class="fetch-btn" onclick="fetchContent()">Fetch HTML</button>
+  <div class="loading-bar" id="loadingBar"></div>
 
-  <script>
-    function addSelector() {
-      const row = document.createElement('div');
-      row.className = 'selector-row';
-      row.innerHTML = `
+  <div id="results"></div>
+</div>
+
+<!-- Prism -->
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
+
+<script>
+function addSelector() {
+  const row = document.createElement('div');
+  row.className = 'selector-row';
+  row.innerHTML = `
     <input placeholder=".class or #id">
     <button class="add-btn" onclick="this.parentElement.remove()">−</button>
   `;
-      document.getElementById('selectors').appendChild(row);
-    }
+  document.getElementById('selectors').appendChild(row);
+}
 
-    function startLoading() {
-      document.getElementById('loadingBar').style.width = '100%';
-    }
+function startLoading() {
+  document.getElementById('loadingBar').style.width = '100%';
+}
 
-    function stopLoading() {
-      setTimeout(() => {
-        document.getElementById('loadingBar').style.width = '0';
-      }, 400);
-    }
+function stopLoading() {
+  setTimeout(() => {
+    document.getElementById('loadingBar').style.width = '0';
+  }, 400);
+}
 
-    async function fetchContent() {
-      const url = document.getElementById('url').value.trim();
-      const selectors = [...document.querySelectorAll('#selectors input')]
-        .map(i => i.value.trim())
-        .filter(Boolean);
+async function fetchContent() {
+  const url = document.getElementById('url').value.trim();
+  const selectors = [...document.querySelectorAll('#selectors input')]
+    .map(i => i.value.trim())
+    .filter(Boolean);
 
-      if (!url) return;
+  if (!url) return;
 
-      startLoading();
+  startLoading();
 
-      const res = await fetch('/api/fetch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, selectors })
-      });
+  const res = await fetch('/api/fetch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, selectors })
+  });
 
-      const data = await res.json();
-      stopLoading();
+  const data = await res.json();
+  stopLoading();
 
-      renderAll(data);
-    }
+  renderAll(data);
+}
 
-    function formatHTML(html) {
-      const tab = '  ';
-      let formatted = '';
-      let indent = 0;
+function formatHTML(html) {
+  const tab = '  ';
+  let formatted = '';
+  let indent = 0;
 
-      html.replace(/></g, '>\n<').split('\n').forEach(line => {
-        line = line.trim();
-        if (line.startsWith('</')) indent = Math.max(indent - 1, 0);
-        formatted += tab.repeat(indent) + line + '\n';
-        if (
-          line.startsWith('<') &&
-          !line.startsWith('</') &&
-          !line.endsWith('/>') &&
-          !line.includes('</')
-        ) indent++;
-      });
+  html.replace(/></g, '>\n<').split('\n').forEach(line => {
+    line = line.trim();
+    if (line.startsWith('</')) indent = Math.max(indent - 1, 0);
+    formatted += tab.repeat(indent) + line + '\n';
+    if (
+      line.startsWith('<') &&
+      !line.startsWith('</') &&
+      !line.endsWith('/>') &&
+      !line.includes('</')
+    ) indent++;
+  });
 
-      return formatted.trim();
-    }
+  return formatted.trim();
+}
 
-    function escapeHTML(str) {
-      return str.replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
+function escapeHTML(str) {
+  return str.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+}
 
-    function setFixImage(imgElement) {
-      const urlValue = document.getElementById('url').value.trim();
+function renderBlock(title, code, lang) {
+  if (!code) return '';
 
-      if (!urlValue) {
-        alert("Please enter URL first");
-        return;
-      }
+  const formatted = lang === 'html' ? formatHTML(code) : code;
+  const escaped = escapeHTML(formatted);
 
-      imgElement.src = urlValue;
-    }
-
-    function renderBlock(title, code, lang) {
-      if (!code) return '';
-
-      const formatted = lang === 'html' ? formatHTML(code) : code;
-      const escaped = escapeHTML(formatted);
-
-      return `
+  return `
     <div class="result-block">
       <div class="result-header">
         <span>${title}</span>
-        <div style="display:flex; gap:8px; align-items:center;">
-          
-          <!-- Fix Image -->
-          <img id="fixImage" 
-               src="" 
-               alt="Fix" 
-               style="width:22px; height:22px; cursor:pointer;" 
-               onclick="setFixImage(this)">
-
+        <div style="display:flex; gap:8px;">
+          <button class="copy-btn fix-btn" onclick="fixImage(this)">Fix Image</button>
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
       </div>
+
+      <div class="image-preview"></div>
+
       <pre><code class="language-${lang}">${escaped}</code></pre>
     </div>
   `;
-    }
+}
 
-    function renderAll(data) {
-      const results = document.getElementById('results');
-      results.innerHTML = '';
+function renderAll(data) {
+  const results = document.getElementById('results');
+  results.innerHTML = '';
 
-      if (data.title) {
-        results.innerHTML += renderBlock('Title', data.title, 'html');
-      }
+  if (data.title) {
+    results.innerHTML += renderBlock('Title', data.title, 'html');
+  }
 
-      if (data.inlineStyles) {
-        results.innerHTML += renderBlock('Inline CSS', data.inlineStyles, 'css');
-      }
+  if (data.inlineStyles) {
+    results.innerHTML += renderBlock('Inline CSS', data.inlineStyles, 'css');
+  }
 
-      if (data.inlineScripts) {
-        results.innerHTML += renderBlock('Inline JS', data.inlineScripts, 'javascript');
-      }
+  if (data.inlineScripts) {
+    results.innerHTML += renderBlock('Inline JS', data.inlineScripts, 'javascript');
+  }
 
-      data.results.forEach(item => {
-        results.innerHTML += renderBlock(item.selector, item.content, 'html');
-      });
+  data.results.forEach(item => {
+    results.innerHTML += renderBlock(item.selector, item.content, 'html');
+  });
 
-      Prism.highlightAll();
-    }
+  Prism.highlightAll();
+}
 
-    function copyCode(btn) {
-      const code = btn.closest('.result-block').querySelector('code').innerText;
-      navigator.clipboard.writeText(code);
+function copyCode(btn) {
+  const code = btn.closest('.result-block').querySelector('code').innerText;
+  navigator.clipboard.writeText(code);
 
-      btn.textContent = 'Copied';
-      btn.classList.add('copied');
+  btn.textContent = 'Copied';
+  btn.classList.add('copied');
 
-      setTimeout(() => {
-        btn.textContent = 'Copy';
-        btn.classList.remove('copied');
-      }, 1500);
-    }
-  </script>
+  setTimeout(() => {
+    btn.textContent = 'Copy';
+    btn.classList.remove('copied');
+  }, 1500);
+}
+
+function fixImage(btn) {
+  const imageUrl = document.getElementById('url').value.trim();
+
+  if (!imageUrl) {
+    alert("Please enter image URL above");
+    return;
+  }
+
+  const block = btn.closest('.result-block');
+  const preview = block.querySelector('.image-preview');
+
+  // Toggle behavior
+  if (preview.innerHTML !== '') {
+    preview.innerHTML = '';
+    btn.textContent = 'Fix Image';
+  } else {
+    preview.innerHTML = `<img src="${imageUrl}" onerror="this.remove()">`;
+    btn.textContent = 'Remove Image';
+  }
+}
+</script>
 
 </body>
-
 </html>
