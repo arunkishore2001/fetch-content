@@ -5,6 +5,7 @@
 <title>HTML Fetch Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Prism -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
 
 <style>
@@ -13,6 +14,7 @@ body {
   background: linear-gradient(135deg, #667eea, #764ba2);
   padding: 30px;
 }
+
 .container {
   max-width: 950px;
   margin: auto;
@@ -20,17 +22,20 @@ body {
   padding: 25px;
   border-radius: 12px;
 }
+
 input {
   width: 100%;
   padding: 12px;
   border-radius: 6px;
   border: 1px solid #ccc;
 }
+
 .selector-row {
   display: flex;
   gap: 10px;
   margin-top: 10px;
 }
+
 .add-btn {
   padding: 12px 16px;
   background: #667eea;
@@ -39,6 +44,7 @@ input {
   border-radius: 6px;
   cursor: pointer;
 }
+
 .fetch-btn {
   margin-top: 15px;
   width: 100%;
@@ -49,6 +55,7 @@ input {
   border-radius: 8px;
   cursor: pointer;
 }
+
 .loading-bar {
   height: 4px;
   width: 0;
@@ -56,22 +63,25 @@ input {
   margin-top: 10px;
   transition: width 0.4s ease;
 }
+
 .result-block {
   background: #1e1e1e;
   padding: 15px;
   border-radius: 10px;
   margin-top: 20px;
 }
+
 .result-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
   align-items: center;
 }
+
 .result-header span {
   color: #9cdcfe;
   font-weight: bold;
 }
+
 .copy-btn {
   background: #0d6efd;
   color: #fff;
@@ -80,15 +90,15 @@ input {
   border-radius: 6px;
   cursor: pointer;
 }
+
+.fix-btn {
+  background: #ff9800;
+}
+
 .copy-btn.copied {
   background: #28a745;
 }
-.image-preview img {
-  max-width: 100%;
-  max-height: 200px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
+
 pre {
   margin: 0;
   max-height: 450px;
@@ -101,7 +111,8 @@ pre {
 <body>
 
 <div class="container">
-  <input id="url" placeholder="Enter page URL here">
+
+  <input id="url" placeholder="Enter Base Website URL (Example: https://www.manageengine.com)">
 
   <div id="selectors">
     <div class="selector-row">
@@ -116,6 +127,7 @@ pre {
   <div id="results"></div>
 </div>
 
+<!-- Prism -->
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
@@ -160,56 +172,10 @@ async function fetchContent() {
 
   const data = await res.json();
   stopLoading();
+
   renderAll(data);
 }
 
-/* ---------------------------
-   RELATIVE → ABSOLUTE FIX
----------------------------- */
-function makeUrlsAbsolute(html, baseUrl) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, "text/html");
-
-  // Fix src
-  doc.querySelectorAll('[src]').forEach(el => {
-    const src = el.getAttribute('src');
-    if (src && !src.startsWith('http') && !src.startsWith('//') && !src.startsWith('data:')) {
-      el.setAttribute('src', new URL(src, baseUrl).href);
-    }
-  });
-
-  // Fix srcset (handles multiple entries)
-  doc.querySelectorAll('[srcset]').forEach(el => {
-    const srcset = el.getAttribute('srcset');
-    if (!srcset) return;
-
-    const updated = srcset.split(',')
-      .map(part => {
-        const [urlPart, size] = part.trim().split(' ');
-        if (!urlPart.startsWith('http') && !urlPart.startsWith('//')) {
-          return new URL(urlPart, baseUrl).href + (size ? ' ' + size : '');
-        }
-        return part.trim();
-      })
-      .join(', ');
-
-    el.setAttribute('srcset', updated);
-  });
-
-  // Fix href
-  doc.querySelectorAll('[href]').forEach(el => {
-    const href = el.getAttribute('href');
-    if (href && !href.startsWith('http') && !href.startsWith('#') && !href.startsWith('mailto:')) {
-      el.setAttribute('href', new URL(href, baseUrl).href);
-    }
-  });
-
-  return doc.body.innerHTML;
-}
-
-/* ---------------------------
-   FORMAT + ESCAPE
----------------------------- */
 function formatHTML(html) {
   const tab = '  ';
   let formatted = '';
@@ -236,31 +202,23 @@ function escapeHTML(str) {
             .replace(/>/g, '&gt;');
 }
 
-/* ---------------------------
-   RENDER BLOCK
----------------------------- */
 function renderBlock(title, code, lang) {
   if (!code) return '';
 
-  const baseUrl = document.getElementById('url').value.trim();
-  let processedCode = code;
-
-  if (lang === 'html') {
-    processedCode = makeUrlsAbsolute(code, baseUrl);
-  }
-
-  const formatted = lang === 'html' ? formatHTML(processedCode) : processedCode;
+  const formatted = lang === 'html' ? formatHTML(code) : code;
   const escaped = escapeHTML(formatted);
 
   return `
     <div class="result-block">
       <div class="result-header">
         <span>${title}</span>
-        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <div style="display:flex; gap:8px;">
+          ${lang === 'html' ? 
+            `<button class="copy-btn fix-btn" onclick="fixImages(this)">Fix Images</button>` 
+            : ''}
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
       </div>
-
-      <div class="image-preview">${lang === 'html' ? processedCode : ''}</div>
-
       <pre><code class="language-${lang}">${escaped}</code></pre>
     </div>
   `;
@@ -300,6 +258,49 @@ function copyCode(btn) {
     btn.textContent = 'Copy';
     btn.classList.remove('copied');
   }, 1500);
+}
+
+function fixImages(btn) {
+
+  const baseUrl = document.getElementById('url').value.trim();
+
+  if (!baseUrl) {
+    alert("Enter Base Website URL first (Example: https://www.manageengine.com)");
+    return;
+  }
+
+  const cleanBase = baseUrl.replace(/\/$/, '');
+  const block = btn.closest('.result-block');
+  const codeElement = block.querySelector('code');
+
+  const originalHTML = codeElement.innerText;
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(originalHTML, "text/html");
+
+  doc.querySelectorAll("img").forEach(img => {
+    const src = img.getAttribute("src");
+    if (src && !src.startsWith("http")) {
+      img.setAttribute("src", new URL(src, cleanBase).href);
+    }
+  });
+
+  doc.querySelectorAll("source").forEach(source => {
+    const srcset = source.getAttribute("srcset");
+    if (srcset && !srcset.startsWith("http")) {
+      source.setAttribute("srcset", new URL(srcset, cleanBase).href);
+    }
+  });
+
+  const updatedHTML = doc.body.innerHTML;
+
+  const formatted = formatHTML(updatedHTML);
+  codeElement.innerHTML = escapeHTML(formatted);
+
+  Prism.highlightElement(codeElement);
+
+  btn.textContent = "Images Fixed ✅";
+  btn.style.background = "#28a745";
 }
 </script>
 
