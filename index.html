@@ -5,6 +5,7 @@
 <title>HTML Fetch Tool</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- Prism -->
 <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
 
 <style>
@@ -13,6 +14,7 @@ body {
   background: linear-gradient(135deg, #667eea, #764ba2);
   padding: 30px;
 }
+
 .container {
   max-width: 950px;
   margin: auto;
@@ -20,17 +22,20 @@ body {
   padding: 25px;
   border-radius: 12px;
 }
+
 input {
   width: 100%;
   padding: 12px;
   border-radius: 6px;
   border: 1px solid #ccc;
 }
+
 .selector-row {
   display: flex;
   gap: 10px;
   margin-top: 10px;
 }
+
 .add-btn {
   padding: 12px 16px;
   background: #667eea;
@@ -39,6 +44,7 @@ input {
   border-radius: 6px;
   cursor: pointer;
 }
+
 .fetch-btn {
   margin-top: 15px;
   width: 100%;
@@ -49,6 +55,7 @@ input {
   border-radius: 8px;
   cursor: pointer;
 }
+
 .loading-bar {
   height: 4px;
   width: 0;
@@ -56,21 +63,30 @@ input {
   margin-top: 10px;
   transition: width 0.4s ease;
 }
+
+.section {
+  margin-top: 30px;
+}
+
 .result-block {
   background: #1e1e1e;
   padding: 15px;
   border-radius: 10px;
   margin-top: 20px;
 }
+
 .result-header {
   display: flex;
   justify-content: space-between;
+  margin-bottom: 10px;
   align-items: center;
 }
+
 .result-header span {
   color: #9cdcfe;
   font-weight: bold;
 }
+
 .copy-btn {
   background: #0d6efd;
   color: #fff;
@@ -79,17 +95,27 @@ input {
   border-radius: 6px;
   cursor: pointer;
 }
+
 .fix-btn {
   background: #ff9800;
 }
+
 .copy-btn.copied {
   background: #28a745;
 }
+
 pre {
-  margin-top: 15px;
+  margin: 0;
   max-height: 450px;
   overflow: auto;
   border-radius: 8px;
+}
+
+.image-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-bottom: 15px;
 }
 </style>
 </head>
@@ -98,8 +124,7 @@ pre {
 
 <div class="container">
 
-  <!-- Base URL input -->
-  <input id="url" placeholder="Enter Base Domain URL (Example: https://www.manageengine.com)">
+  <input id="url" placeholder="Enter image URL here">
 
   <div id="selectors">
     <div class="selector-row">
@@ -114,8 +139,11 @@ pre {
   <div id="results"></div>
 </div>
 
+<!-- Prism -->
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-javascript.min.js"></script>
 
 <script>
 function addSelector() {
@@ -156,11 +184,28 @@ async function fetchContent() {
 
   const data = await res.json();
   stopLoading();
+
   renderAll(data);
 }
 
 function formatHTML(html) {
-  return html.replace(/></g, '>\n<');
+  const tab = '  ';
+  let formatted = '';
+  let indent = 0;
+
+  html.replace(/></g, '>\n<').split('\n').forEach(line => {
+    line = line.trim();
+    if (line.startsWith('</')) indent = Math.max(indent - 1, 0);
+    formatted += tab.repeat(indent) + line + '\n';
+    if (
+      line.startsWith('<') &&
+      !line.startsWith('</') &&
+      !line.endsWith('/>') &&
+      !line.includes('</')
+    ) indent++;
+  });
+
+  return formatted.trim();
 }
 
 function escapeHTML(str) {
@@ -169,21 +214,25 @@ function escapeHTML(str) {
             .replace(/>/g, '&gt;');
 }
 
-function renderBlock(title, code) {
+function renderBlock(title, code, lang) {
   if (!code) return '';
 
-  const escaped = escapeHTML(formatHTML(code));
+  const formatted = lang === 'html' ? formatHTML(code) : code;
+  const escaped = escapeHTML(formatted);
 
   return `
     <div class="result-block">
       <div class="result-header">
         <span>${title}</span>
-        <div>
-          <button class="copy-btn fix-btn" onclick="fixImages(this)">Fix Images</button>
+        <div style="display:flex; gap:8px;">
+          <button class="copy-btn fix-btn" onclick="fixImage(this)">Fix Image</button>
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
       </div>
-      <pre><code class="language-markup">${escaped}</code></pre>
+
+      <div class="image-preview"></div>
+
+      <pre><code class="language-${lang}">${escaped}</code></pre>
     </div>
   `;
 }
@@ -192,8 +241,20 @@ function renderAll(data) {
   const results = document.getElementById('results');
   results.innerHTML = '';
 
+  if (data.title) {
+    results.innerHTML += renderBlock('Title', data.title, 'html');
+  }
+
+  if (data.inlineStyles) {
+    results.innerHTML += renderBlock('Inline CSS', data.inlineStyles, 'css');
+  }
+
+  if (data.inlineScripts) {
+    results.innerHTML += renderBlock('Inline JS', data.inlineScripts, 'javascript');
+  }
+
   data.results.forEach(item => {
-    results.innerHTML += renderBlock(item.selector, item.content);
+    results.innerHTML += renderBlock(item.selector, item.content, 'html');
   });
 
   Prism.highlightAll();
@@ -212,36 +273,25 @@ function copyCode(btn) {
   }, 1500);
 }
 
-function fixImages(btn) {
-  const baseUrl = document.getElementById('url').value.trim();
-  if (!baseUrl) {
-    alert("Enter base domain URL first");
+function fixImage(btn) {
+  const imageUrl = document.getElementById('url').value.trim();
+
+  if (!imageUrl) {
+    alert("Please enter image URL above");
     return;
   }
 
-  const cleanBase = baseUrl.replace(/\/$/, '');
   const block = btn.closest('.result-block');
-  const codeElement = block.querySelector('code');
+  const preview = block.querySelector('.image-preview');
 
-  let html = codeElement.innerText;
-
-  // Fix src="/path"
-  html = html.replace(/src="\/(.*?)"/g, `src="${cleanBase}/$1"`);
-
-  // Fix src="images/..."
-  html = html.replace(/src="images\/(.*?)"/g, `src="${cleanBase}/images/$1"`);
-
-  // Fix srcset="images/..."
-  html = html.replace(/srcset="images\/(.*?)"/g, `srcset="${cleanBase}/images/$1"`);
-
-  // Fix data-lazy images
-  html = html.replace(/data-lazy="true"[^>]*src="\/(.*?)"/g, `src="${cleanBase}/$1"`);
-
-  codeElement.innerHTML = escapeHTML(formatHTML(html));
-  Prism.highlightElement(codeElement);
-
-  btn.textContent = "Images Fixed ✅";
-  btn.style.background = "#28a745";
+  // Toggle behavior
+  if (preview.innerHTML !== '') {
+    preview.innerHTML = '';
+    btn.textContent = 'Fix Image';
+  } else {
+    preview.innerHTML = `<img src="${imageUrl}" onerror="this.remove()">`;
+    btn.textContent = 'Remove Image';
+  }
 }
 </script>
 
