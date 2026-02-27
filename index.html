@@ -213,9 +213,9 @@ function renderBlock(title, code, lang) {
       <div class="result-header">
         <span>${title}</span>
         <div style="display:flex; gap:8px;">
-          ${lang === 'html' ? 
-            `<button class="copy-btn fix-btn" onclick="fixImages(this)">Fix Images</button>` 
-            : ''}
+        ${lang === 'html' || lang === 'css' ? 
+  `<button class="copy-btn fix-btn" onclick="fixImages(this, '${lang}')">Fix URLs</button>` 
+  : ''}
           <button class="copy-btn" onclick="copyCode(this)">Copy</button>
         </div>
       </div>
@@ -228,9 +228,17 @@ function renderAll(data) {
   const results = document.getElementById('results');
   results.innerHTML = '';
 
-  if (data.title) {
-    results.innerHTML += renderBlock('Title', data.title, 'html');
-  }
+if (data.title) {
+  results.innerHTML += `
+    <div class="result-block">
+      <div class="result-header">
+        <span>Page Title</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><code class="language-markup">${escapeHTML(data.title)}</code></pre>
+    </div>
+  `;
+}
 
   if (data.inlineStyles) {
     results.innerHTML += renderBlock('Inline CSS', data.inlineStyles, 'css');
@@ -260,7 +268,7 @@ function copyCode(btn) {
   }, 1500);
 }
 
-function fixImages(btn) {
+function fixImages(btn, type) {
 
   const baseUrl = document.getElementById('url').value.trim();
 
@@ -272,34 +280,63 @@ function fixImages(btn) {
   const cleanBase = baseUrl.replace(/\/$/, '');
   const block = btn.closest('.result-block');
   const codeElement = block.querySelector('code');
+  const originalContent = codeElement.innerText;
 
-  const originalHTML = codeElement.innerText;
+  if (type === "html") {
 
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(originalHTML, "text/html");
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(originalContent, "text/html");
 
-  doc.querySelectorAll("img").forEach(img => {
-    const src = img.getAttribute("src");
-    if (src && !src.startsWith("http")) {
-      img.setAttribute("src", new URL(src, cleanBase).href);
-    }
-  });
 
-  doc.querySelectorAll("source").forEach(source => {
-    const srcset = source.getAttribute("srcset");
-    if (srcset && !srcset.startsWith("http")) {
-      source.setAttribute("srcset", new URL(srcset, cleanBase).href);
-    }
-  });
+    doc.querySelectorAll("img").forEach(img => {
+      const src = img.getAttribute("src");
+      if (src && !src.startsWith("http") && !src.startsWith("data:")) {
+        img.setAttribute("src", new URL(src, cleanBase).href);
+      }
+    });
 
-  const updatedHTML = doc.body.innerHTML;
 
-  const formatted = formatHTML(updatedHTML);
-  codeElement.innerHTML = escapeHTML(formatted);
+    doc.querySelectorAll("source").forEach(source => {
+      const srcset = source.getAttribute("srcset");
+      if (srcset && !srcset.startsWith("http")) {
+        source.setAttribute("srcset", new URL(srcset, cleanBase).href);
+      }
+    });
+
+    const updatedHTML = doc.body.innerHTML;
+    const formatted = formatHTML(updatedHTML);
+    codeElement.innerHTML = escapeHTML(formatted);
+  }
+
+ 
+  if (type === "css") {
+
+    const updatedCSS = originalContent.replace(/url\((.*?)\)/g, (match, p1) => {
+
+      let url = p1.trim().replace(/['"]/g, '');
+
+      if (
+        url.startsWith("http") ||
+        url.startsWith("data:") ||
+        url.startsWith("//")
+      ) {
+        return `url(${url})`;
+      }
+
+      try {
+        const absolute = new URL(url, cleanBase).href;
+        return `url(${absolute})`;
+      } catch {
+        return match;
+      }
+    });
+
+    codeElement.innerHTML = escapeHTML(updatedCSS);
+  }
 
   Prism.highlightElement(codeElement);
 
-  btn.textContent = "Images Fixed ✅";
+  btn.textContent = "URLs Fixed ✅";
   btn.style.background = "#28a745";
 }
 </script>
